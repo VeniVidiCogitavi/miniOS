@@ -77,28 +77,28 @@ static int my_atoi(const char *s)
 static void cmd_help(const char *args)
 {
     (void)args;
-    user_puts("Available commands:\n");
+    lib_puts("Available commands:\n");
     for (int i = 0; cmd_table[i].name; i++) {
-        user_puts("  ");
-        user_puts(cmd_table[i].name);
-        user_puts("\t— ");
-        user_puts(cmd_table[i].help);
-        user_puts("\n");
+        lib_puts("  ");
+        lib_puts(cmd_table[i].name);
+        lib_puts("\t— ");
+        lib_puts(cmd_table[i].help);
+        lib_puts("\n");
     }
 }
 
 static void cmd_echo(const char *args)
 {
     if (args && *args) {
-        user_puts(args);
+        lib_puts(args);
     }
-    user_puts("\n");
+    lib_puts("\n");
 }
 
 static void cmd_pid(const char *args)
 {
     (void)args;
-    int pid = user_getpid();
+    int pid = lib_getpid();
     char buf[16];
     int i = 0;
     if (pid == 0) { buf[i++] = '0'; }
@@ -107,28 +107,28 @@ static void cmd_pid(const char *args)
     for (int l = 0, r = i - 1; l < r; l++, r--) {
         char t = buf[l]; buf[l] = buf[r]; buf[r] = t;
     }
-    user_puts("PID: ");
-    user_puts(buf);
-    user_puts("\n");
+    lib_puts("PID: ");
+    lib_puts(buf);
+    lib_puts("\n");
 }
 
 static void cmd_sleep(const char *args)
 {
     if (!args || !*args) {
-        user_puts("usage: sleep <ms>\n");
+        lib_puts("usage: sleep <ms>\n");
         return;
     }
     unsigned int ms = (unsigned int)my_atoi(args);
-    user_puts("Sleeping...\n");
-    user_sleep(ms);
-    user_puts("Awake.\n");
+    lib_puts("Sleeping...\n");
+    lib_sleep(ms);
+    lib_puts("Awake.\n");
 }
 
 static void cmd_exit(const char *args)
 {
     (void)args;
-    user_puts("Goodbye.\n");
-    user_exit(0);
+    lib_puts("Goodbye.\n");
+    lib_exit(0);
 }
 
 /* ------------------------------------------------------------------ *
@@ -161,23 +161,23 @@ static void dispatch(char *line)
         }
     }
 
-    user_puts("Unknown command: ");
-    user_puts(cmd);
-    user_puts("  (try 'help')\n");
+    lib_puts("Unknown command: ");
+    lib_puts(cmd);
+    lib_puts("  (try 'help')\n");
 }
 
 int main(void)
 {
-    user_puts("miniOS shell — type 'help' for commands\n\n");
+    lib_puts("miniOS shell — type 'help' for commands\n\n");
 
     char buf[256];
     while (1) {
-        user_puts("$ ");
-        syscall_result_t n = user_read(0, buf, sizeof(buf));
+        lib_puts("$ ");
+        syscall_result_t n = lib_read(0, buf, sizeof(buf));
         if (n <= 0) break;   /* EOF */
         dispatch(buf);
     }
 
-    user_puts("\n");
-    user_exit(0);
+    lib_puts("\n");
+    lib_exit(0);
 }

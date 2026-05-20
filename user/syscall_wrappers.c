@@ -1,9 +1,19 @@
 /*
  * user/syscall_wrappers.c  —  miniOS user-space library
  *
- * Implements the wrappers declared in syscall_wrappers.h.
- * Each function is intentionally short — its only job is to marshal
- * arguments into the four uintptr_t slots and call syscall().
+ * Implements the library calls declared in syscall_wrappers.h.
+ * 
+ * In real Linux, this place would be held by the C Standard Library
+ * (e.g.: malloc(), free(), etc). Here, they serve the same purpose
+ * but each function is intentionally short — its only job is to set up
+ * the arguments into the four uintptr_t slots and call syscall().
+ * 
+ * To add a new system call to our OS, you'll need to create a new wrapper
+ * to expose the new syscall to the user level.
+ * 
+ * In Linux, the C library calls would have more code to validate inputs,
+ * transform data, etc. But they would do the same basic job of calling
+ * the kernel entry point with the right parameters.
  */
 
 #include <string.h>
@@ -14,7 +24,7 @@
  *  I/O                                                                *
  * ------------------------------------------------------------------ */
 
-syscall_result_t user_write(int fd, const char *buf, size_t len)
+syscall_result_t lib_write(int fd, const char *buf, size_t len)
 {
     return syscall(SYS_WRITE,
                    (uintptr_t)fd,
@@ -23,12 +33,12 @@ syscall_result_t user_write(int fd, const char *buf, size_t len)
                    0);
 }
 
-syscall_result_t user_puts(const char *s)
+syscall_result_t lib_puts(const char *s)
 {
-    return user_write(1, s, strlen(s));
+    return lib_write(1, s, strlen(s));
 }
 
-syscall_result_t user_read(int fd, char *buf, size_t len)
+syscall_result_t lib_read(int fd, char *buf, size_t len)
 {
     return syscall(SYS_READ,
                    (uintptr_t)fd,
@@ -41,18 +51,18 @@ syscall_result_t user_read(int fd, char *buf, size_t len)
  *  Process control                                                    *
  * ------------------------------------------------------------------ */
 
-void user_exit(int status)
+void lib_exit(int status)
 {
     syscall(SYS_EXIT, (uintptr_t)status, 0, 0, 0);
     /* unreachable */
 }
 
-int user_getpid(void)
+int lib_getpid(void)
 {
     return (int)syscall(SYS_GETPID, 0, 0, 0, 0);
 }
 
-void user_sleep(unsigned int ms)
+void lib_sleep(unsigned int ms)
 {
     syscall(SYS_SLEEP, (uintptr_t)ms, 0, 0, 0);
 }
@@ -61,27 +71,13 @@ void user_sleep(unsigned int ms)
  *  Memory                                                             *
  * ------------------------------------------------------------------ */
 
-void *user_alloc(size_t size)
+void *lib_alloc(size_t size)
 {
     syscall_result_t r = syscall(SYS_ALLOC, (uintptr_t)size, 0, 0, 0);
     return (r < 0) ? NULL : (void *)(uintptr_t)r;
 }
 
-void user_free(void *ptr)
+void lib_free(void *ptr)
 {
     syscall(SYS_FREE, (uintptr_t)ptr, 0, 0, 0);
 }
-
-/* ------------------------------------------------------------------ *
- * STUDENTS: implement your new wrapper functions below.
- *
- * Pattern to follow:
- *
- *   return_type user_foo(arg_type arg, ...)
- *   {
- *       return syscall(SYS_FOO,
- *                      (uintptr_t)arg,
- *                      ...
- *                      0);
- *   }
- * ------------------------------------------------------------------ */

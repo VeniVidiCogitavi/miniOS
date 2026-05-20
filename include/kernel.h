@@ -1,8 +1,7 @@
 /*
  * kernel.h  —  miniOS kernel internals
  *
- * Students working on the kernel side include this header.
- * User-space code should NOT include this — it is kernel-private.
+ * This will be included for kernel side code, but not user-level code.
  */
 
 #ifndef MINIOS_KERNEL_H

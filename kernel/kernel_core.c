@@ -2,6 +2,9 @@
  * kernel/kernel_core.c  —  miniOS
  *
  * Kernel startup, shutdown, and the kprintf() logging utility.
+ * 
+ * Add code to kernel_init() if new functionality requires
+ * initialization on startup.
  */
 
 #include <stdio.h>
@@ -9,18 +12,13 @@
 #include "../include/kernel.h"
 
 /* ------------------------------------------------------------------ *
- *  Kernel init / shutdown                                             *
+ *  Kernel init / shutdown                                            *
  * ------------------------------------------------------------------ */
 void kernel_init(void)
 {
     kprintf("[kernel] miniOS kernel initialised\n");
     kprintf("[kernel] %d syscalls registered\n", (int)SYS_MAX - 1);
 
-    /* Students: initialise your subsystems here.
-     *   e.g.  sched_init();
-     *         vm_init();
-     *         vfs_init();
-     */
 }
 
 void kernel_shutdown(void)
@@ -29,7 +27,7 @@ void kernel_shutdown(void)
 }
 
 /* ------------------------------------------------------------------ *
- *  kprintf — kernel-side print (prefixes output so it stands out)    *
+ *  kprintf — kernel-side print for writing trace messages            *
  * ------------------------------------------------------------------ */
 void kprintf(const char *fmt, ...)
 {

@@ -2,17 +2,26 @@
  * kernel/syscall_handler.c  —  miniOS
  *
  * This is where the kernel actually services each system call.
- *
+ * 
+ * This code contains the single kernel entry point - kernel_handle_syscall().
+ * That function checks which system call has been requested and calls a specific
+ * handler for that particular system call.
+ * 
  * === HOW TO ADD A NEW SYSTEM CALL ===
+ *   1) Add a SYS_* constant in include/syscall.h.
+ *   2) Add a case to the switch below.
+ *   3) Implement a static helper function in this file (or
+ *      add a new kernel .c file if it's more than ~20 lines).
+ *   4) Add a user-space wrapper in user/syscall_wrappers.{h,c}.
  *
- *   1.  Add a SYS_* constant in include/syscall.h.
- *   2.  Add a case to the switch below.
- *   3.  Implement a static helper function in this file (or a new
- *       a new kernel .c file if the logic is substantial).
- *   4.  Add a user-space wrapper in user/syscall_wrappers.{h,c}.
- *
- * Keep each handler small.  If a handler grows beyond ~20 lines,
- * move it to its own file (e.g. kernel/fs.c, kernel/proc.c).
+ * === HOW TO IMPLEMENT A NEW SYSTEM CALL ===
+ *   1) For code that implements a feature that we're studying,
+ *      we'll generally want to write our own routines and data
+ *      structures to get the right behavior.
+ *   2) However, we are able to call the regular C library calls
+ *      here. we might do this for something that is too hard
+ *      to do ourselves, or for side functionality that isn't
+ *      part of our core project.
  */
 
 #define _POSIX_C_SOURCE 200809L

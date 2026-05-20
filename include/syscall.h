@@ -5,10 +5,10 @@
  * Every system call number lives here, along with the types both
  * sides agree on.
  *
- * Students: to add a new system call, do THREE things:
- *   1. Add a SYS_* constant below (give it the next available number).
- *   2. Implement the handler in kernel/syscall_handler.c.
- *   3. Add a user-space wrapper in user/syscall_wrappers.c (and .h).
+ * To add a new system call, do THREE things:
+ *   1) Add a SYS_* constant below (give it the next available number).
+ *   2) Implement the handler in kernel/syscall_handler.c.
+ *   3) Add a user-space wrapper in user/syscall_wrappers.c (and .h).
  */
 
 #ifndef MINIOS_SYSCALL_H

@@ -20,14 +20,14 @@ static void process_io(void);
 
 int main(void)
 {
-    user_puts("=== miniOS user-space demo ===\n\n");
+    lib_puts("=== miniOS user-space demo ===\n\n");
 
     process_greeting();
     process_memory();
     process_io();
 
-    user_puts("\nAll done. Exiting.\n");
-    user_exit(0);
+    lib_puts("\nAll done. Exiting.\n");
+    lib_exit(0);
 }
 
 /* ------------------------------------------------------------------ *
@@ -35,12 +35,12 @@ int main(void)
  * ------------------------------------------------------------------ */
 static void process_greeting(void)
 {
-    int pid = user_getpid();
+    int pid = lib_getpid();
 
     char buf[64];
     /* Build message manually — no sprintf in "user space" */
     const char *msg1 = "Hello from user space! My PID is ";
-    user_write(1, msg1, strlen(msg1));
+    lib_write(1, msg1, strlen(msg1));
 
     /* tiny itoa for the demo */
     int n = pid;
@@ -52,8 +52,8 @@ static void process_greeting(void)
     for (int l = 0, r = i - 1; l < r; l++, r--) {
         char t = buf[l]; buf[l] = buf[r]; buf[r] = t;
     }
-    user_puts(buf);
-    user_puts("\n");
+    lib_puts(buf);
+    lib_puts("\n");
 }
 
 /* ------------------------------------------------------------------ *
@@ -61,13 +61,13 @@ static void process_greeting(void)
  * ------------------------------------------------------------------ */
 static void process_memory(void)
 {
-    user_puts("Requesting 128 bytes from kernel... ");
-    char *block = (char *)user_alloc(128);
+    lib_puts("Requesting 128 bytes from kernel... ");
+    char *block = (char *)lib_alloc(128);
     if (!block) {
-        user_puts("FAILED (returned NULL)\n");
+        lib_puts("FAILED (returned NULL)\n");
         return;
     }
-    user_puts("got it.\n");
+    lib_puts("got it.\n");
 
     /* Write and read back */
     const char *payload = "data stored in kernel-allocated memory";
@@ -75,13 +75,13 @@ static void process_memory(void)
     for (size_t i = 0; i < len; i++) block[i] = payload[i];
     block[len] = '\0';
 
-    user_puts("Contents: ");
-    user_puts(block);
-    user_puts("\n");
+    lib_puts("Contents: ");
+    lib_puts(block);
+    lib_puts("\n");
 
-    user_puts("Freeing block... ");
-    user_free(block);
-    user_puts("done.\n");
+    lib_puts("Freeing block... ");
+    lib_free(block);
+    lib_puts("done.\n");
 }
 
 /* ------------------------------------------------------------------ *
@@ -90,10 +90,10 @@ static void process_memory(void)
 static void process_io(void)
 {
     char buf[128];
-    user_puts("Enter something (or press Enter to skip): ");
-    syscall_result_t n = user_read(0, buf, sizeof(buf));
+    lib_puts("Enter something (or press Enter to skip): ");
+    syscall_result_t n = lib_read(0, buf, sizeof(buf));
     if (n > 0) {
-        user_puts("Kernel echoes: ");
-        user_write(1, buf, (size_t)n);
+        lib_puts("Kernel echoes: ");
+        lib_write(1, buf, (size_t)n);
     }
 }
