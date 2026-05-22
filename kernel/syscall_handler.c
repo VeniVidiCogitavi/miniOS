@@ -6,22 +6,7 @@
  * This code contains the single kernel entry point - kernel_handle_syscall().
  * That function checks which system call has been requested and calls a specific
  * handler for that particular system call.
- * 
- * === HOW TO ADD A NEW SYSTEM CALL ===
- *   1) Add a SYS_* constant in include/syscall.h.
- *   2) Add a case to the switch below.
- *   3) Implement a static helper function in this file (or
- *      add a new kernel .c file if it's more than ~20 lines).
- *   4) Add a user-space wrapper in user/syscall_wrappers.{h,c}.
  *
- * === HOW TO IMPLEMENT A NEW SYSTEM CALL ===
- *   1) For code that implements a feature that we're studying,
- *      we'll generally want to write our own routines and data
- *      structures to get the right behavior.
- *   2) However, we are able to call the regular C library calls
- *      here. we might do this for something that is too hard
- *      to do ourselves, or for side functionality that isn't
- *      part of our core project.
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -34,7 +19,7 @@
 #include "../include/syscall.h"
 
 /* ------------------------------------------------------------------ *
- *  Forward declarations for internal helpers                          *
+ *  Forward declarations for internal helpers                         *
  * ------------------------------------------------------------------ */
 static syscall_result_t handle_write (uintptr_t fd, uintptr_t buf,
                                       uintptr_t len);
@@ -47,7 +32,7 @@ static syscall_result_t handle_alloc (uintptr_t size);
 static syscall_result_t handle_free  (uintptr_t ptr);
 
 /* ------------------------------------------------------------------ *
- *  Simple kernel state                                                *
+ *  Simple kernel state                                               *
  * ------------------------------------------------------------------ */
 static int next_pid = 1;   /* process-ID counter */
 
@@ -80,7 +65,7 @@ syscall_result_t kernel_handle_syscall(syscall_num_t num,
 }
 
 /* ------------------------------------------------------------------ *
- *  Handler implementations                                            *
+ *  Handler implementations                                           *
  * ------------------------------------------------------------------ */
 
 static syscall_result_t handle_write(uintptr_t fd,
