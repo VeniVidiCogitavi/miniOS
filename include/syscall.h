@@ -24,14 +24,15 @@
 typedef int64_t syscall_result_t;
 
 /* ------------------------------------------------------------------ *
- *  Error codes                                                        *
+ *  Error codes                                                       *
  * ------------------------------------------------------------------ */
-#define MINIOS_OK          0
-#define MINIOS_EBADF      -1   /* bad file descriptor                 */
-#define MINIOS_ENOMEM     -2   /* out of memory                       */
-#define MINIOS_EINVAL     -3   /* invalid argument                    */
-#define MINIOS_ENOSYS     -4   /* syscall not implemented             */
-#define MINIOS_EPERM      -5   /* permission denied                   */
+#define MINIOS_OK             0
+#define MINIOS_EBADF         -1 /* bad file descriptor                */
+#define MINIOS_ENOMEM        -2 /* out of memory                      */
+#define MINIOS_EINVAL        -3 /* invalid argument                   */
+#define MINIOS_ENOSYS        -4 /* syscall not implemented            */
+#define MINIOS_EPERM         -5 /* permission denied                  */
+#define MINIOS_EMAXPROCESSES -6 /* too many processes                 */
 
 /* ------------------------------------------------------------------ *
  *  System call numbers (when adding, use next sequential number)     *
@@ -42,13 +43,15 @@ typedef enum {
     SYS_READ   = 2,   /* read(fd, buf, len)               */
 
     /* --- Process control --- */
-    SYS_EXIT   = 3,   /* exit(status)                     */
-    SYS_GETPID = 4,   /* getpid()                         */
-    SYS_SLEEP  = 5,   /* sleep(milliseconds)              */
+    SYS_SPAWN = 3,
+    SYS_PROCESS = 4,
+    SYS_EXIT   = 5,
+    SYS_GETPID = 6,
+    SYS_SLEEP  = 7,  // in msec
 
     /* --- Memory --- */
-    SYS_ALLOC  = 6,   /* alloc(size)  → ptr as uintptr_t  */
-    SYS_FREE   = 7,   /* free(ptr)                        */
+    SYS_ALLOC  = 8,   /* alloc(size)  → ptr as uintptr_t  */
+    SYS_FREE   = 9,   /* free(ptr)                        */
 
     SYS_MAX    /* sentinel — must stay last */
 } syscall_num_t;

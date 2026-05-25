@@ -36,6 +36,13 @@ syscall_result_t lib_read(int fd, char *buf, size_t len);
  *  Process control                                                    *
  * ------------------------------------------------------------------ */
 
+ /* Create a process, giving the function it will run and the argument it will take. Do not run it yet. */
+ /* Returns the PID of the new process (positive) or an error (negative) */
+ int lib_spawn(void *(*thread_func_ptr)(void *), void *arg_ptr);
+
+ /* Run all spawned processes. Blocks until all processes have exited. */
+ void lib_process();
+
 /* Terminate the current process with the given exit status. */
 void lib_exit(int status);
 

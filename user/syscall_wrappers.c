@@ -51,6 +51,16 @@ syscall_result_t lib_read(int fd, char *buf, size_t len)
  *  Process control                                                    *
  * ------------------------------------------------------------------ */
 
+int lib_spawn(void *(*thread_func_ptr)(void *), void *arg_ptr)
+{
+    return (int)syscall(SYS_SPAWN, (uintptr_t)thread_func_ptr, (uintptr_t)arg_ptr, 0, 0);
+}
+
+void lib_process()
+{
+    syscall(SYS_PROCESS, 0, 0, 0, 0);
+}
+
 void lib_exit(int status)
 {
     syscall(SYS_EXIT, (uintptr_t)status, 0, 0, 0);

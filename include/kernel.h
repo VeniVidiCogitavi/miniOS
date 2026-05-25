@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <pthread.h>
 #include "syscall.h"
 
 /* ------------------------------------------------------------------ *
@@ -22,15 +23,28 @@ typedef enum {
     FD_STDERR = 2,
 } std_fd_t;
 
+
+/* ------------------------------------------------------------------ *
+ *  Process States                                                    *
+ * ------------------------------------------------------------------ */
+typedef enum {
+    PROC_READY,
+    PROC_RUNNING,
+    PROC_DONE
+} proc_state_t;
+
 /* ------------------------------------------------------------------ *
  *  Process descriptor                                                 *
  *  Extend this struct as you add scheduling, memory management, etc. *
  * ------------------------------------------------------------------ */
 typedef struct {
-    int     pid;
-    int     state;       /* 0 = running, 1 = sleeping, 2 = zombie    */
-    int     exit_code;
-    char    name[32];
+    int           pid;
+    proc_state_t  state;
+    void         *(*thread_func_ptr)(void *);
+    void         *thread_arg_ptr;
+    pthread_t     thread;
+    int           exit_code;
+    char          name[32];
 } process_t;
 
 /* ------------------------------------------------------------------ *

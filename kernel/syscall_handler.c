@@ -21,20 +21,26 @@
 /* ------------------------------------------------------------------ *
  *  Forward declarations for internal helpers                         *
  * ------------------------------------------------------------------ */
-static syscall_result_t handle_write (uintptr_t fd, uintptr_t buf,
-                                      uintptr_t len);
-static syscall_result_t handle_read  (uintptr_t fd, uintptr_t buf,
-                                      uintptr_t len);
-static syscall_result_t handle_exit  (uintptr_t status);
-static syscall_result_t handle_getpid(void);
-static syscall_result_t handle_sleep (uintptr_t ms);
-static syscall_result_t handle_alloc (uintptr_t size);
-static syscall_result_t handle_free  (uintptr_t ptr);
+static syscall_result_t handle_write  (uintptr_t fd, uintptr_t buf,
+                                       uintptr_t len);
+static syscall_result_t handle_read   (uintptr_t fd, uintptr_t buf,
+                                       uintptr_t len);
+static syscall_result_t handle_spawn  (uintptr_t thread_func_ptr, uintptr_t arg_ptr);
+static syscall_result_t handle_process(void);
+static syscall_result_t handle_exit   (uintptr_t status);
+static syscall_result_t handle_getpid (void);
+static syscall_result_t handle_sleep  (uintptr_t ms);
+static syscall_result_t handle_alloc  (uintptr_t size);
+static syscall_result_t handle_free   (uintptr_t ptr);
 
 /* ------------------------------------------------------------------ *
  *  Simple kernel state                                               *
  * ------------------------------------------------------------------ */
-static int next_pid = 1;   /* process-ID counter */
+#define MAX_PROCESSES 2
+static int next_pid = 1;
+static int current_processes = 0;
+static process_t process_table[MAX_PROCESSES];
+
 
 /* ------------------------------------------------------------------ *
  *  Dispatcher — the heart of the kernel                              *
@@ -50,13 +56,15 @@ syscall_result_t kernel_handle_syscall(syscall_num_t num,
 
     // When adding kernel functions, add a case here, and a new "handle_*()" function
     switch (num) {
-        case SYS_WRITE:  return handle_write (a0, a1, a2);
-        case SYS_READ:   return handle_read  (a0, a1, a2);
-        case SYS_EXIT:   return handle_exit  (a0);
-        case SYS_GETPID: return handle_getpid();
-        case SYS_SLEEP:  return handle_sleep (a0);
-        case SYS_ALLOC:  return handle_alloc (a0);
-        case SYS_FREE:   return handle_free  (a0);
+        case SYS_WRITE:   return handle_write   (a0, a1, a2);
+        case SYS_READ:    return handle_read    (a0, a1, a2);
+        case SYS_SPAWN:   return handle_spawn   (a0, a1);
+        case SYS_PROCESS: return handle_process ();
+        case SYS_EXIT:    return handle_exit    (a0);
+        case SYS_GETPID:  return handle_getpid  ();
+        case SYS_SLEEP:   return handle_sleep   (a0);
+        case SYS_ALLOC:   return handle_alloc   (a0);
+        case SYS_FREE:    return handle_free    (a0);
 
         default:
             kprintf("[kernel] unknown syscall %d — returning ENOSYS\n", num);
@@ -94,6 +102,44 @@ static syscall_result_t handle_read(uintptr_t fd,
     if (!fgets(s, (int)len, stdin))
         return 0;
     return (syscall_result_t)strlen(s);
+}
+
+static syscall_result_t handle_spawn(uintptr_t thread_func_ptr, uintptr_t arg_ptr)
+{
+    if (current_processes >= MAX_PROCESSES) return MINIOS_EMAXPROCESSES;
+
+    int i = current_processes++;
+    int pid = next_pid++;
+
+    process_table[i].pid = pid;
+    process_table[i].state = PROC_READY;
+    process_table[i].thread_func_ptr = (void * (*)(void *))thread_func_ptr; 
+    process_table[i].thread_arg_ptr = (void *)arg_ptr;
+
+    return pid;
+}
+
+static syscall_result_t handle_process()
+{
+    // Start the processes
+    for (int i = 0; i < current_processes; i++) {
+        pthread_create(
+            &process_table[i].thread,
+            NULL,
+            process_table[i].thread_func_ptr,
+            process_table[i].thread_arg_ptr
+        );
+        process_table[i].state = PROC_RUNNING;
+    }
+
+    // Wait for each process to finish
+    for (int i = 0; i < current_processes; i++) {
+        pthread_join(process_table[i].thread, NULL);
+        process_table[i].state = PROC_DONE;
+        current_processes--;
+    }
+
+    return 0;
 }
 
 static syscall_result_t handle_exit(uintptr_t status)
