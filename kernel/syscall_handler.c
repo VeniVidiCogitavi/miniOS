@@ -169,7 +169,7 @@ static syscall_result_t handle_lockinit(void)
 
 static syscall_result_t handle_lock(void)
 {
-    while (atomic_flag_test_and_set_explicit(&lock, memory_order_acquire)) {
+    while (atomic_flag_test_and_set(&lock)) {
         ;
     }
     return MINIOS_OK;
@@ -177,7 +177,7 @@ static syscall_result_t handle_lock(void)
 
 static syscall_result_t handle_unlock(void)
 {
-    atomic_flag_clear_explicit(&lock, memory_order_release);
+    atomic_flag_clear(&lock);
     return MINIOS_OK;
 }
 
