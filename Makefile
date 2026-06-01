@@ -11,6 +11,7 @@
 
 CC      := gcc
 CFLAGS  := -std=c11 -Wall -Wextra -Wpedantic -g \
+           -pthread  # New! \
            -I./include
 
 BUILD   := build

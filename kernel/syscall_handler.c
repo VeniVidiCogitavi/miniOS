@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>    /* usleep */
+#include <stdatomic.h>
 #include <time.h>      /* nanosleep fallback */
 #include "../include/kernel.h"
 #include "../include/syscall.h"
@@ -21,17 +22,20 @@
 /* ------------------------------------------------------------------ *
  *  Forward declarations for internal helpers                         *
  * ------------------------------------------------------------------ */
-static syscall_result_t handle_write  (uintptr_t fd, uintptr_t buf,
-                                       uintptr_t len);
-static syscall_result_t handle_read   (uintptr_t fd, uintptr_t buf,
-                                       uintptr_t len);
-static syscall_result_t handle_spawn  (uintptr_t thread_func_ptr, uintptr_t arg_ptr);
-static syscall_result_t handle_process(void);
-static syscall_result_t handle_exit   (uintptr_t status);
-static syscall_result_t handle_getpid (void);
-static syscall_result_t handle_sleep  (uintptr_t ms);
-static syscall_result_t handle_alloc  (uintptr_t size);
-static syscall_result_t handle_free   (uintptr_t ptr);
+static syscall_result_t handle_write   (uintptr_t fd, uintptr_t buf,
+                                        uintptr_t len);
+static syscall_result_t handle_read    (uintptr_t fd, uintptr_t buf,
+                                        uintptr_t len);
+static syscall_result_t handle_spawn   (uintptr_t thread_func_ptr, uintptr_t arg_ptr);
+static syscall_result_t handle_process (void);
+static syscall_result_t handle_exit    (uintptr_t status);
+static syscall_result_t handle_lockinit(void);
+static syscall_result_t handle_lock    (void);
+static syscall_result_t handle_unlock  (void);
+static syscall_result_t handle_getpid  (void);
+static syscall_result_t handle_sleep   (uintptr_t ms);
+static syscall_result_t handle_alloc   (uintptr_t size);
+static syscall_result_t handle_free    (uintptr_t ptr);
 
 /* ------------------------------------------------------------------ *
  *  Simple kernel state                                               *
@@ -40,6 +44,7 @@ static syscall_result_t handle_free   (uintptr_t ptr);
 static int next_pid = 1;
 static int current_processes = 0;
 static process_t process_table[MAX_PROCESSES];
+static atomic_flag lock = ATOMIC_FLAG_INIT;
 
 
 /* ------------------------------------------------------------------ *
@@ -56,15 +61,18 @@ syscall_result_t kernel_handle_syscall(syscall_num_t num,
 
     // When adding kernel functions, add a case here, and a new "handle_*()" function
     switch (num) {
-        case SYS_WRITE:   return handle_write   (a0, a1, a2);
-        case SYS_READ:    return handle_read    (a0, a1, a2);
-        case SYS_SPAWN:   return handle_spawn   (a0, a1);
-        case SYS_PROCESS: return handle_process ();
-        case SYS_EXIT:    return handle_exit    (a0);
-        case SYS_GETPID:  return handle_getpid  ();
-        case SYS_SLEEP:   return handle_sleep   (a0);
-        case SYS_ALLOC:   return handle_alloc   (a0);
-        case SYS_FREE:    return handle_free    (a0);
+        case SYS_WRITE:    return handle_write    (a0, a1, a2);
+        case SYS_READ:     return handle_read     (a0, a1, a2);
+        case SYS_SPAWN:    return handle_spawn    (a0, a1);
+        case SYS_PROCESS:  return handle_process  ();
+        case SYS_LOCKINIT: return handle_lockinit ();
+        case SYS_LOCK:     return handle_lock     ();
+        case SYS_UNLOCK:   return handle_unlock   ();
+        case SYS_EXIT:     return handle_exit     (a0);
+        case SYS_GETPID:   return handle_getpid   ();
+        case SYS_SLEEP:    return handle_sleep    (a0);
+        case SYS_ALLOC:    return handle_alloc    (a0);
+        case SYS_FREE:     return handle_free     (a0);
 
         default:
             kprintf("[kernel] unknown syscall %d — returning ENOSYS\n", num);
@@ -80,6 +88,9 @@ static syscall_result_t handle_write(uintptr_t fd,
                                      uintptr_t buf,
                                      uintptr_t len)
 {
+    static atomic_flag lock = ATOMIC_FLAG_INIT;
+
+    while (atomic_flag_test_and_set(&lock)) ;
     const char *s = (const char *)buf;
 
     if (!s)                    return MINIOS_EINVAL;
@@ -87,6 +98,7 @@ static syscall_result_t handle_write(uintptr_t fd,
 
     FILE *stream = (fd == 1) ? stdout : stderr;
     size_t written = fwrite(s, 1, (size_t)len, stream);
+    atomic_flag_clear(&lock);
     return (syscall_result_t)written;
 }
 
@@ -133,13 +145,14 @@ static syscall_result_t handle_process()
     }
 
     // Wait for each process to finish
-    for (int i = 0; i < current_processes; i++) {
+    int numProcesses = current_processes;
+    for (int i = 0; i < numProcesses; i++) {
         pthread_join(process_table[i].thread, NULL);
         process_table[i].state = PROC_DONE;
         current_processes--;
     }
 
-    return 0;
+    return MINIOS_OK;
 }
 
 static syscall_result_t handle_exit(uintptr_t status)
@@ -147,6 +160,25 @@ static syscall_result_t handle_exit(uintptr_t status)
     kprintf("[kernel] process exiting with status %lu\n", status);
     exit((int)status);
     return MINIOS_OK;   /* unreachable, but keeps the compiler happy */
+}
+
+static syscall_result_t handle_lockinit(void)
+{
+    return MINIOS_OK;
+}
+
+static syscall_result_t handle_lock(void)
+{
+    while (atomic_flag_test_and_set_explicit(&lock, memory_order_acquire)) {
+        ;
+    }
+    return MINIOS_OK;
+}
+
+static syscall_result_t handle_unlock(void)
+{
+    atomic_flag_clear_explicit(&lock, memory_order_release);
+    return MINIOS_OK;
 }
 
 static syscall_result_t handle_getpid(void)

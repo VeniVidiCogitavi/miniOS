@@ -10,10 +10,13 @@
 #include "syscall_wrappers.h"
 
 void *processBody(void *pokemonName) {
+    lib_lockinit();
     for (int i = 0; i < 1000; i++) {
+        lib_lock();
         lib_puts("I choose you, ");
         lib_puts((char *)pokemonName);
         lib_puts("!\n");
+        lib_unlock();
     }
     return NULL;
 }

@@ -67,6 +67,21 @@ void lib_exit(int status)
     /* unreachable */
 }
 
+void lib_lockinit()
+{
+    syscall(SYS_LOCKINIT, 0, 0, 0, 0);
+}
+
+void lib_lock()
+{
+    syscall(SYS_LOCK, 0, 0, 0, 0);
+}
+
+void lib_unlock()
+{
+    syscall(SYS_UNLOCK, 0, 0, 0, 0);
+}
+
 int lib_getpid(void)
 {
     return (int)syscall(SYS_GETPID, 0, 0, 0, 0);

@@ -46,6 +46,15 @@ syscall_result_t lib_read(int fd, char *buf, size_t len);
 /* Terminate the current process with the given exit status. */
 void lib_exit(int status);
 
+/* Initialize a concurrency lock */
+void lib_lockinit(void);
+
+/* Ask for a process lock */
+void lib_lock(void);
+
+/* Release a process lock */
+void lib_unlock(void);
+
 /* Return this process's PID. */
 int lib_getpid(void);
 
