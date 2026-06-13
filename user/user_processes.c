@@ -7,9 +7,13 @@
  */
 
 #include <string.h>
+#include <time.h>
+#include <stdio.h>
 #include "syscall_wrappers.h"
 
 void *processBody(void *pokemonName) {
+    printf("Process %s started\n", (char *)pokemonName);
+
     lib_lockinit();
     for (int i = 0; i < 25; i++) {
         lib_yield();
@@ -18,9 +22,10 @@ void *processBody(void *pokemonName) {
         lib_puts((char *)pokemonName);
         lib_puts("!\n");
         lib_unlock();
-        lib_sleep(1000);
+        lib_sleep(250);
     }
     lib_done();
+    printf("Process %s done\n", (char *)pokemonName);
     return NULL;
 }
 

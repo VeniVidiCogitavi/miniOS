@@ -26,6 +26,7 @@ void swap_process_in(process_t *process_ptr) {
  * This should be called while the process_lock is held.
  */
 void swap_process_out(process_t *process_ptr) {
+//    kprintf("[kernel] swapping process out: %d\n", process_ptr->pid);
     process_ptr->state = PROC_READY;
     process_ptr->run_flag = false;
 
@@ -46,14 +47,15 @@ void swap_process_out(process_t *process_ptr) {
  * false if there were no ready processes.
  * This should be called while the process_lock is held.
  */
-bool swap_in_ready_process(void) {
+process_t *swap_in_ready_process(void) {
+//    kprintf("[kernel] swapping in ready process");
     for (int i = 0; i < MAX_PROCESSES; i++) {
         if ((process_table[i].pid != 0) && (process_table[i].state == PROC_READY)) {
             swap_process_in(&process_table[i]);
-            return true;
+            return &process_table[i];
         }
     }
-    return false;
+    return NULL;
 }
 
 

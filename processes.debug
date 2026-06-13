@@ -1,0 +1,206 @@
+[kernel] handle_spawn
+[kernel] handle_spawn
+[kernel] handle_lockinit
+[kernel] handle_yield from process 1: new process - swapped in
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_lockinit
+[kernel] handle_yield from process 2: [kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice expired, swapped in process 2, new process - swapped out
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice expired, swapped in process 2, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice expired, swapped in process 2, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice expired, swapped in process 2, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice expired, swapped in process 2, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice expired, swapped in process 2, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice not expired
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_done
+swapped out current process
+[kernel] handle_lock
+[kernel] handle_unlock
+[kernel] handle_sleep
+make: *** [Makefile:71: run-processes] Interrupt

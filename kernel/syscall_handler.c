@@ -58,8 +58,8 @@ syscall_result_t kernel_handle_syscall(syscall_num_t num,
                                        uintptr_t a2,
                                        uintptr_t a3)
 {
-    kprintf("[kernel] syscall %d  args=(%lu, %lu, %lu, %lu)\n",
-            num, a0, a1, a2, a3);
+//    kprintf("[kernel] syscall %d  args=(%lu, %lu, %lu, %lu)\n",
+//            num, a0, a1, a2, a3);
 
     // When adding kernel functions, add a case here, and a new "handle_*()" function
     switch (num) {
@@ -110,6 +110,7 @@ static syscall_result_t handle_read(uintptr_t fd,
                                     uintptr_t buf,
                                     uintptr_t len)
 {
+//    kprintf("[kernel] handle_read\n");
     char *s = (char *)buf;
 
     if (!s)    return MINIOS_EINVAL;
@@ -122,6 +123,7 @@ static syscall_result_t handle_read(uintptr_t fd,
 
 static syscall_result_t handle_spawn(uintptr_t thread_func_ptr, uintptr_t arg_ptr)
 {
+    kprintf("[kernel] handle_spawn\n");
     if (current_processes >= MAX_PROCESSES) return MINIOS_EMAXPROCESSES;
 
     int i = current_processes++;
@@ -137,25 +139,26 @@ static syscall_result_t handle_spawn(uintptr_t thread_func_ptr, uintptr_t arg_pt
 
 static syscall_result_t handle_process()
 {
-    // This will cause the main thread to exit, but other threads will continue running.
-    pthread_exit(NULL);
+    pthread_exit(NULL);  // main exits, but process stays alive
     return MINIOS_OK;
 }
 
 static syscall_result_t handle_exit(uintptr_t status)
 {
-    kprintf("[kernel] process exiting with status %lu\n", status);
+    kprintf("[kernel] handle_exit() with status %lu\n", status);
     exit((int)status);
     return MINIOS_OK;   /* unreachable, but keeps the compiler happy */
 }
 
 static syscall_result_t handle_lockinit(void)
 {
+    kprintf("[kernel] handle_lockinit\n");
     return MINIOS_OK;
 }
 
 static syscall_result_t handle_lock(void)
 {
+    kprintf("[kernel] handle_lock\n");
     while (atomic_flag_test_and_set(&lock)) {
         ;
     }
@@ -164,14 +167,18 @@ static syscall_result_t handle_lock(void)
 
 static syscall_result_t handle_unlock(void)
 {
+    kprintf("[kernel] handle_unlock\n");
     atomic_flag_clear(&lock);
     return MINIOS_OK;
 }
 
 static syscall_result_t handle_yield(void)
 {
+    kprintf("[kernel] handle_yield from process ");
     pthread_mutex_lock(&process_lock);
     pthread_t threadId = pthread_self();
+    process_t *process_ptr = find_process_by_thread_id(threadId);
+    kprintf("%d: ", process_ptr->pid);
 
     if (!current_process_ptr) {
         // No process is currently running. This must be being called from a
@@ -179,32 +186,45 @@ static syscall_result_t handle_yield(void)
         // Find this process's entry in the process table and swap it in
         process_t *process_ptr = find_process_by_thread_id(threadId);
         swap_process_in(process_ptr);
+        kprintf("new process - swapped in\n");
     } else if (current_process_ptr->thread != threadId) {
         // This process is trying to yield, but it's not the currently running process.
         // This means that it's a newly-spawned process that hasn't been swapped in yet
         // We need to put it into a wait state for now.
         process_t *process_ptr = find_process_by_thread_id(threadId);
         swap_process_out(process_ptr);
+        kprintf("new process - swapped out\n");
     } else {
         // This is the currently running process, so we need to check whether its timeslice has expired,
         // and if so, swap it out and swap in another ready process.
         if (is_timeslice_expired(&current_process_ptr->slice_expire_time)) {
+            kprintf("timeslice expired, ");
+            process_t *outgoing = current_process_ptr;
             // If there's another ready process, swap it in
-            if (swap_in_ready_process()) {
+            process_t *swapped_process = swap_in_ready_process();
+            if (swapped_process) {
                 // If we swapped in another process, we need to swap this one out
-                swap_process_out(current_process_ptr);
+                kprintf("swapped in process %d, ", swapped_process->pid);
+                swap_process_out(outgoing);
+                kprintf("swapped out current process\n");
+            } else {
+                // There were no ready processes, we just continue running this one for now
+                kprintf("no ready process, continuing\n");
             }
-
-            // If there were no ready processes, we just continue running this one for now
+        } else {
+            // Timeslice hasn't expired, so we just continue running this process
+            kprintf("timeslice not expired\n");
         }
     }
 
+    fflush(stderr);
     pthread_mutex_unlock(&process_lock);
     return MINIOS_OK;
 }
 
 static syscall_result_t handle_done(void)
 {
+    kprintf("[kernel] handle_done\n");
     // This is called by a process when it's done, to allow the kernel to clean up and schedule another process.
     pthread_mutex_lock(&process_lock);
     if (!swap_in_ready_process()) {
@@ -218,11 +238,13 @@ static syscall_result_t handle_done(void)
 
 static syscall_result_t handle_getpid(void)
 {
+    kprintf("[kernel] handle_getpid\n");
     return (syscall_result_t)current_process_ptr->pid;
 }
 
 static syscall_result_t handle_sleep(uintptr_t ms)
 {
+    kprintf("[kernel] handle_sleep\n");
     struct timespec ts;
     ts.tv_sec  = (time_t)(ms / 1000);
     ts.tv_nsec = (long)((ms % 1000) * 1000000L);
@@ -232,6 +254,7 @@ static syscall_result_t handle_sleep(uintptr_t ms)
 
 static syscall_result_t handle_alloc(uintptr_t size)
 {
+    kprintf("[kernel] handle_alloc\n");
     if (size == 0) return MINIOS_EINVAL;
 
     void *ptr = malloc((size_t)size);
@@ -243,6 +266,7 @@ static syscall_result_t handle_alloc(uintptr_t size)
 
 static syscall_result_t handle_free(uintptr_t ptr)
 {
+    kprintf("[kernel] handle_free\n");
     if (!ptr) return MINIOS_EINVAL;
     free((void *)ptr);
     kprintf("[kernel] free %p\n", (void *)ptr);
