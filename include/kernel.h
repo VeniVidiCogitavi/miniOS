@@ -9,8 +9,12 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <pthread.h>
+#include <time.h>
+#include <stdatomic.h>
 #include "syscall.h"
+
 
 /* ------------------------------------------------------------------ *
  *  File-descriptor table (tiny, fixed-size for simplicity)           *
@@ -38,13 +42,14 @@ typedef enum {
  *  Extend this struct as you add scheduling, memory management, etc. *
  * ------------------------------------------------------------------ */
 typedef struct {
-    int           pid;
-    proc_state_t  state;
-    void         *(*thread_func_ptr)(void *);
-    void         *thread_arg_ptr;
-    pthread_t     thread;
-    int           exit_code;
-    char          name[32];
+    int             pid;
+    proc_state_t    state;
+    pthread_t       thread;
+    bool            run_flag;
+    pthread_cond_t  condition;
+    struct timespec slice_expire_time;
+    int             exit_code;
+    char            name[32];
 } process_t;
 
 /* ------------------------------------------------------------------ *
@@ -67,5 +72,17 @@ syscall_result_t kernel_handle_syscall(syscall_num_t num,
  *  Kernel logging (kernel/kprintf.c)                                  *
  * ------------------------------------------------------------------ */
 void kprintf(const char *fmt, ...);
+
+
+/* ------------------------------------------------------------------ *
+ *  Kernel state globals                                              *
+ * ------------------------------------------------------------------ */
+#define MAX_PROCESSES 2
+extern int              next_pid;
+extern int              current_processes;
+extern process_t        process_table[];
+extern atomic_flag      lock;
+extern process_t       *current_process_ptr;
+extern pthread_mutex_t  process_lock;
 
 #endif /* MINIOS_KERNEL_H */

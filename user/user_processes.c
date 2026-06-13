@@ -11,13 +11,16 @@
 
 void *processBody(void *pokemonName) {
     lib_lockinit();
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 25; i++) {
+        lib_yield();
         lib_lock();
         lib_puts("I choose you, ");
         lib_puts((char *)pokemonName);
         lib_puts("!\n");
         lib_unlock();
+        lib_sleep(1000);
     }
+    lib_done();
     return NULL;
 }
 
@@ -28,9 +31,7 @@ int main(void)
 
     lib_spawn(processBody, "Pikachu");
     lib_spawn(processBody, "Charizard");
-    lib_process();
-
-    lib_puts("\nAll done. Exiting.\n");
-    lib_exit(0);
+    lib_process();  // Will wait forever, but that's ok for this demo
+    
 }
 

@@ -51,10 +51,12 @@ typedef enum {
     SYS_LOCKINIT = 8,
     SYS_LOCK = 9,
     SYS_UNLOCK = 10,
+    SYS_YIELD = 11,
+    SYS_DONE = 12,
 
     /* --- Memory --- */
-    SYS_ALLOC  = 11,   /* alloc(size)  → ptr as uintptr_t  */
-    SYS_FREE   = 12,   /* free(ptr)                        */
+    SYS_ALLOC  = 13,   /* alloc(size)  → ptr as uintptr_t  */
+    SYS_FREE   = 14,   /* free(ptr)                        */
 
     SYS_MAX    /* sentinel — must stay last */
 } syscall_num_t;

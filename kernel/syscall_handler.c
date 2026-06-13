@@ -14,10 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>    /* usleep */
-#include <stdatomic.h>
 #include <time.h>      /* nanosleep fallback */
 #include "../include/kernel.h"
 #include "../include/syscall.h"
+#include "../include/kernel_utils.h"
 
 /* ------------------------------------------------------------------ *
  *  Forward declarations for internal helpers                         *
@@ -32,6 +32,8 @@ static syscall_result_t handle_exit    (uintptr_t status);
 static syscall_result_t handle_lockinit(void);
 static syscall_result_t handle_lock    (void);
 static syscall_result_t handle_unlock  (void);
+static syscall_result_t handle_yield   (void);
+static syscall_result_t handle_done    (void);
 static syscall_result_t handle_getpid  (void);
 static syscall_result_t handle_sleep   (uintptr_t ms);
 static syscall_result_t handle_alloc   (uintptr_t size);
@@ -40,12 +42,12 @@ static syscall_result_t handle_free    (uintptr_t ptr);
 /* ------------------------------------------------------------------ *
  *  Simple kernel state                                               *
  * ------------------------------------------------------------------ */
-#define MAX_PROCESSES 2
-static int next_pid = 1;
-static int current_processes = 0;
-static process_t process_table[MAX_PROCESSES];
-static atomic_flag lock = ATOMIC_FLAG_INIT;
-
+int              next_pid = 1;
+int              current_processes = 0;
+process_t        process_table[MAX_PROCESSES];
+atomic_flag      lock = ATOMIC_FLAG_INIT;
+process_t       *current_process_ptr = NULL;
+pthread_mutex_t  process_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* ------------------------------------------------------------------ *
  *  Dispatcher — the heart of the kernel                              *
@@ -68,6 +70,8 @@ syscall_result_t kernel_handle_syscall(syscall_num_t num,
         case SYS_LOCKINIT: return handle_lockinit ();
         case SYS_LOCK:     return handle_lock     ();
         case SYS_UNLOCK:   return handle_unlock   ();
+        case SYS_YIELD:    return handle_yield    ();
+        case SYS_DONE:     return handle_done     ();
         case SYS_EXIT:     return handle_exit     (a0);
         case SYS_GETPID:   return handle_getpid   ();
         case SYS_SLEEP:    return handle_sleep    (a0);
@@ -125,33 +129,16 @@ static syscall_result_t handle_spawn(uintptr_t thread_func_ptr, uintptr_t arg_pt
 
     process_table[i].pid = pid;
     process_table[i].state = PROC_READY;
-    process_table[i].thread_func_ptr = (void * (*)(void *))thread_func_ptr; 
-    process_table[i].thread_arg_ptr = (void *)arg_ptr;
-
+    process_table[i].run_flag = false;
+    process_table[i].condition = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+    pthread_create(&process_table[i].thread, NULL, (void *(*)(void *))thread_func_ptr, (void *)arg_ptr);
     return pid;
 }
 
 static syscall_result_t handle_process()
 {
-    // Start the processes
-    for (int i = 0; i < current_processes; i++) {
-        pthread_create(
-            &process_table[i].thread,
-            NULL,
-            process_table[i].thread_func_ptr,
-            process_table[i].thread_arg_ptr
-        );
-        process_table[i].state = PROC_RUNNING;
-    }
-
-    // Wait for each process to finish
-    int numProcesses = current_processes;
-    for (int i = 0; i < numProcesses; i++) {
-        pthread_join(process_table[i].thread, NULL);
-        process_table[i].state = PROC_DONE;
-        current_processes--;
-    }
-
+    // This will cause the main thread to exit, but other threads will continue running.
+    pthread_exit(NULL);
     return MINIOS_OK;
 }
 
@@ -181,11 +168,57 @@ static syscall_result_t handle_unlock(void)
     return MINIOS_OK;
 }
 
+static syscall_result_t handle_yield(void)
+{
+    pthread_mutex_lock(&process_lock);
+    pthread_t threadId = pthread_self();
+
+    if (!current_process_ptr) {
+        // No process is currently running. This must be being called from a
+        // newly-spawned process before it has been swapped in.
+        // Find this process's entry in the process table and swap it in
+        process_t *process_ptr = find_process_by_thread_id(threadId);
+        swap_process_in(process_ptr);
+    } else if (current_process_ptr->thread != threadId) {
+        // This process is trying to yield, but it's not the currently running process.
+        // This means that it's a newly-spawned process that hasn't been swapped in yet
+        // We need to put it into a wait state for now.
+        process_t *process_ptr = find_process_by_thread_id(threadId);
+        swap_process_out(process_ptr);
+    } else {
+        // This is the currently running process, so we need to check whether its timeslice has expired,
+        // and if so, swap it out and swap in another ready process.
+        if (is_timeslice_expired(&current_process_ptr->slice_expire_time)) {
+            // If there's another ready process, swap it in
+            if (swap_in_ready_process()) {
+                // If we swapped in another process, we need to swap this one out
+                swap_process_out(current_process_ptr);
+            }
+
+            // If there were no ready processes, we just continue running this one for now
+        }
+    }
+
+    pthread_mutex_unlock(&process_lock);
+    return MINIOS_OK;
+}
+
+static syscall_result_t handle_done(void)
+{
+    // This is called by a process when it's done, to allow the kernel to clean up and schedule another process.
+    pthread_mutex_lock(&process_lock);
+    if (!swap_in_ready_process()) {
+        // No ready processes, so we reset the process pointer.
+        current_process_ptr = NULL;
+    }
+
+    pthread_mutex_unlock(&process_lock);
+    return MINIOS_OK;
+}
+
 static syscall_result_t handle_getpid(void)
 {
-    /* In a real kernel this would return the running process's PID.
-     * Here we hand out incrementing IDs to illustrate the concept. */
-    return (syscall_result_t)next_pid++;
+    return (syscall_result_t)current_process_ptr->pid;
 }
 
 static syscall_result_t handle_sleep(uintptr_t ms)

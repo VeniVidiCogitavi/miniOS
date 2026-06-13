@@ -55,6 +55,12 @@ void lib_lock(void);
 /* Release a process lock */
 void lib_unlock(void);
 
+/* Yield to the OS for timeslice check */
+void lib_yield(void);
+
+/* Notify OS that process is exiting */
+void lib_done(void);
+
 /* Return this process's PID. */
 int lib_getpid(void);
 

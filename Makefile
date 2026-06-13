@@ -11,7 +11,7 @@
 
 CC      := gcc
 CFLAGS  := -std=c11 -Wall -Wextra -Wpedantic -g \
-           -pthread  # New! \
+           -pthread \
            -I./include
 
 BUILD   := build
@@ -21,9 +21,10 @@ BUILD   := build
 # ------------------------------------------------------------------ #
 
 KERNEL_SRC := \
-    kernel/kernel_core.c    \
+    kernel/kernel_core.c     \
     kernel/syscall_gateway.c \
-    kernel/syscall_handler.c
+    kernel/syscall_handler.c \
+	kernel/kernel_utils.c
 
 USER_SRC := \
     user/syscall_wrappers.c

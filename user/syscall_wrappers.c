@@ -82,6 +82,16 @@ void lib_unlock()
     syscall(SYS_UNLOCK, 0, 0, 0, 0);
 }
 
+void lib_yield()
+{
+    syscall(SYS_YIELD, 0, 0, 0, 0);
+}
+
+void lib_done()
+{
+    syscall(SYS_DONE, 0, 0, 0, 0);
+}
+
 int lib_getpid(void)
 {
     return (int)syscall(SYS_GETPID, 0, 0, 0, 0);

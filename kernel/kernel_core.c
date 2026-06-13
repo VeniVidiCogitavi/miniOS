@@ -19,6 +19,10 @@ void kernel_init(void)
     kprintf("[kernel] miniOS kernel initialised\n");
     kprintf("[kernel] %d syscalls registered\n", (int)SYS_MAX - 1);
 
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        process_table[i].pid = 0;
+    }
+
 }
 
 void kernel_shutdown(void)
