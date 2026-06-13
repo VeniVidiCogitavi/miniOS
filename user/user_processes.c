@@ -22,7 +22,7 @@ void *processBody(void *pokemonName) {
         lib_puts((char *)pokemonName);
         lib_puts("!\n");
         lib_unlock();
-        lib_sleep(250);
+        lib_sleep(250);  // 1/4 second
     }
     lib_done();
     printf("Process %s done\n", (char *)pokemonName);

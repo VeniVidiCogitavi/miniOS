@@ -1,4 +1,3 @@
-#include <time.h>
 #include "../include/kernel_utils.h"
 
 
@@ -60,9 +59,10 @@ process_t *swap_in_ready_process(void) {
 
 
 /**
- * Find a process by matching its thread ID
+ * Find a process by matching its thread ID. The thread is available to us anywhere.
  */
-process_t *find_process_by_thread_id(pthread_t threadId) {
+process_t *find_process_self(void) {
+    pthread_t threadId = pthread_self();
     for (int i = 0; i < MAX_PROCESSES; i++) {
         if (process_table[i].thread == threadId) {
             return &process_table[i];

@@ -84,5 +84,6 @@ extern process_t        process_table[];
 extern atomic_flag      lock;
 extern process_t       *current_process_ptr;
 extern pthread_mutex_t  process_lock;
+extern bool             is_kernel_initialized;
 
 #endif /* MINIOS_KERNEL_H */

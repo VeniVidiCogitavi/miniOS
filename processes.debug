@@ -1,12 +1,18 @@
+kernel/syscall_handler.c: In function ‘kernel_handle_syscall’:
+kernel/syscall_handler.c:60:50: warning: unused parameter ‘a3’ [-Wunused-parameter]
+   60 |                                        uintptr_t a3)
+      |                                        ~~~~~~~~~~^~
+[kernel] miniOS kernel initialised
+[kernel] 14 syscalls registered
 [kernel] handle_spawn
 [kernel] handle_spawn
 [kernel] handle_lockinit
 [kernel] handle_yield from process 1: new process - swapped in
 [kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
 [kernel] handle_lockinit
-[kernel] handle_yield from process 2: [kernel] handle_yield from process 1: timeslice not expired
+[kernel] handle_yield from process 2: [kernel] handle_unlock
+[kernel] handle_sleep
+[kernel] handle_yield from process 1: timeslice not expired
 [kernel] handle_lock
 [kernel] handle_unlock
 [kernel] handle_sleep
@@ -95,111 +101,6 @@
 [kernel] handle_unlock
 [kernel] handle_sleep
 [kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice expired, swapped in process 2, swapped out current process
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice expired, swapped in process 2, swapped out current process
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 1: timeslice expired, swapped in process 2, swapped out current process
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice not expired
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_yield from process 2: timeslice expired, swapped in process 1, swapped out current process
-[kernel] handle_lock
-[kernel] handle_unlock
-[kernel] handle_sleep
-[kernel] handle_done
-swapped out current process
 [kernel] handle_lock
 [kernel] handle_unlock
 [kernel] handle_sleep

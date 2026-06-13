@@ -48,6 +48,7 @@ process_t        process_table[MAX_PROCESSES];
 atomic_flag      lock = ATOMIC_FLAG_INIT;
 process_t       *current_process_ptr = NULL;
 pthread_mutex_t  process_lock = PTHREAD_MUTEX_INITIALIZER;
+bool             is_kernel_initialized = false;
 
 /* ------------------------------------------------------------------ *
  *  Dispatcher — the heart of the kernel                              *
@@ -60,6 +61,13 @@ syscall_result_t kernel_handle_syscall(syscall_num_t num,
 {
 //    kprintf("[kernel] syscall %d  args=(%lu, %lu, %lu, %lu)\n",
 //            num, a0, a1, a2, a3);
+
+    pthread_mutex_lock(&process_lock);
+    if (!is_kernel_initialized) {
+        kernel_init();
+        is_kernel_initialized = true;
+    }
+    pthread_mutex_unlock(&process_lock);
 
     // When adding kernel functions, add a case here, and a new "handle_*()" function
     switch (num) {
@@ -124,23 +132,32 @@ static syscall_result_t handle_read(uintptr_t fd,
 static syscall_result_t handle_spawn(uintptr_t thread_func_ptr, uintptr_t arg_ptr)
 {
     kprintf("[kernel] handle_spawn\n");
-    if (current_processes >= MAX_PROCESSES) return MINIOS_EMAXPROCESSES;
 
-    int i = current_processes++;
+    // First we need to deal with some status globals, so we need to protect these with the process lock.
+    pthread_mutex_lock(&process_lock);
+    process_t *process_ptr = NULL;
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        if (process_table[i].pid == 0) {
+            process_ptr = &process_table[i];
+            break;
+        }
+    }
+    if (!process_ptr) return MINIOS_EMAXPROCESSES;
+
     int pid = next_pid++;
+    pthread_mutex_unlock(&process_lock);
 
-    process_table[i].pid = pid;
-    process_table[i].state = PROC_READY;
-    process_table[i].run_flag = false;
-    process_table[i].condition = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
-    pthread_create(&process_table[i].thread, NULL, (void *(*)(void *))thread_func_ptr, (void *)arg_ptr);
+    process_ptr->pid = pid;
+    process_ptr->state = PROC_READY;
+    process_ptr->run_flag = false;
+    process_ptr->condition = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+    pthread_create(&process_ptr->thread, NULL, (void *(*)(void *))thread_func_ptr, (void *)arg_ptr);
     return pid;
 }
 
 static syscall_result_t handle_process()
 {
-    pthread_exit(NULL);  // main exits, but process stays alive
-    return MINIOS_OK;
+    pthread_exit(NULL);  // main exits, but threads stay alive
 }
 
 static syscall_result_t handle_exit(uintptr_t status)
@@ -176,36 +193,34 @@ static syscall_result_t handle_yield(void)
 {
     kprintf("[kernel] handle_yield from process ");
     pthread_mutex_lock(&process_lock);
-    pthread_t threadId = pthread_self();
-    process_t *process_ptr = find_process_by_thread_id(threadId);
-    kprintf("%d: ", process_ptr->pid);
+    
+    process_t *this_process_ptr = find_process_self();
+    kprintf("%d: ", this_process_ptr->pid);
 
     if (!current_process_ptr) {
         // No process is currently running. This must be being called from a
         // newly-spawned process before it has been swapped in.
-        // Find this process's entry in the process table and swap it in
-        process_t *process_ptr = find_process_by_thread_id(threadId);
-        swap_process_in(process_ptr);
+        swap_process_in(this_process_ptr);
         kprintf("new process - swapped in\n");
-    } else if (current_process_ptr->thread != threadId) {
+    } else if (current_process_ptr->pid != this_process_ptr->pid) {
         // This process is trying to yield, but it's not the currently running process.
         // This means that it's a newly-spawned process that hasn't been swapped in yet
         // We need to put it into a wait state for now.
-        process_t *process_ptr = find_process_by_thread_id(threadId);
-        swap_process_out(process_ptr);
+        swap_process_out(this_process_ptr);
         kprintf("new process - swapped out\n");
     } else {
         // This is the currently running process, so we need to check whether its timeslice has expired,
         // and if so, swap it out and swap in another ready process.
         if (is_timeslice_expired(&current_process_ptr->slice_expire_time)) {
             kprintf("timeslice expired, ");
-            process_t *outgoing = current_process_ptr;
+            process_t *outgoing_process_ptr = current_process_ptr;
+
             // If there's another ready process, swap it in
-            process_t *swapped_process = swap_in_ready_process();
-            if (swapped_process) {
+            process_t *swapped_process_ptr = swap_in_ready_process();
+            if (swapped_process_ptr) {
                 // If we swapped in another process, we need to swap this one out
-                kprintf("swapped in process %d, ", swapped_process->pid);
-                swap_process_out(outgoing);
+                kprintf("swapped in process %d, ", swapped_process_ptr->pid);
+                swap_process_out(outgoing_process_ptr);
                 kprintf("swapped out current process\n");
             } else {
                 // There were no ready processes, we just continue running this one for now
@@ -227,6 +242,7 @@ static syscall_result_t handle_done(void)
     kprintf("[kernel] handle_done\n");
     // This is called by a process when it's done, to allow the kernel to clean up and schedule another process.
     pthread_mutex_lock(&process_lock);
+    current_process_ptr->pid = 0;
     if (!swap_in_ready_process()) {
         // No ready processes, so we reset the process pointer.
         current_process_ptr = NULL;
