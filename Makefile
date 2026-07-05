@@ -10,7 +10,7 @@
 #   make clean         — remove build artefacts
 
 CC      := gcc
-CFLAGS  := -std=c11 -Wall -Wextra -Wpedantic -g \
+CFLAGS  := -std=gnu11 -Wall -Wextra -Wpedantic -g \
            -pthread \
            -I./include
 

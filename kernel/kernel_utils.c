@@ -2,17 +2,45 @@
 
 
 /**
+ * Returns the ID of an idle core, or -1 if there are no idle cores.
+ * This should be called while the process_lock is held.
+ */
+int find_idle_core(void) {
+    for (int i = 0; i < MAX_CORES; i++) {
+        if (current_process_ptrs[i] == NULL) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+
+/**
+ * Finds the core ID of the current process. Returns -1 if the process is not running on any core.
+ * This should be called while the process_lock is held.
+ */
+int find_core_for_process(process_t *process_ptr) {
+    for (int i = 0; i < MAX_CORES; i++) {
+        if (current_process_ptrs[i] == process_ptr) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+
+/**
  * Swap the given process in, making it the currently running process.
  * This should be called while the process_lock is held.
  */
-void swap_process_in(process_t *process_ptr) {
+void swap_process_in(process_t *process_ptr, int core_id) {
     process_ptr->state = PROC_RUNNING;
     process_ptr->run_flag = true;
 
     // Store the time when this process's timeslice will expire, so we can check it when it yields or makes a syscall
     clock_gettime(CLOCK_MONOTONIC, &process_ptr->slice_expire_time);
     process_ptr->slice_expire_time.tv_sec++;
-    current_process_ptr = process_ptr;
+    current_process_ptrs[core_id] = process_ptr;
 
     // Signal the process to run
     pthread_cond_signal(&process_ptr->condition);
@@ -42,16 +70,21 @@ void swap_process_out(process_t *process_ptr) {
 
 
 /**
- * Find a process in the ready state and swap it in. Returns true if a process was swapped in,
- * false if there were no ready processes.
+ * Find a process in the ready state and swap it in. Returns the pointer to the process that was swapped in,
+ * or NULL if there were no ready processes.
+ * circular_index is used to keep track of where we left off in the process table, so that we can implement
+ * a round-robin scheduling policy.
  * This should be called while the process_lock is held.
  */
-process_t *swap_in_ready_process(void) {
+process_t *swap_in_ready_process(int core_id) {
 //    kprintf("[kernel] swapping in ready process");
+    static int circular_index = 0;
+
     for (int i = 0; i < MAX_PROCESSES; i++) {
-        if ((process_table[i].pid != 0) && (process_table[i].state == PROC_READY)) {
-            swap_process_in(&process_table[i]);
-            return &process_table[i];
+        const int checkIndex = (circular_index + i) % MAX_PROCESSES;
+        if ((process_table[checkIndex].pid != 0) && (process_table[checkIndex].state == PROC_READY)) {
+            swap_process_in(&process_table[checkIndex], core_id);
+            return &process_table[checkIndex];
         }
     }
     return NULL;

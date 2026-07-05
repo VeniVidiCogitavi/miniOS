@@ -42,7 +42,7 @@ typedef enum {
  *  Extend this struct as you add scheduling, memory management, etc. *
  * ------------------------------------------------------------------ */
 typedef struct {
-    int             pid;
+    int             pid;      // Process ID; 0 if this slot is unused
     proc_state_t    state;
     pthread_t       thread;
     bool            run_flag;
@@ -77,12 +77,13 @@ void kprintf(const char *fmt, ...);
 /* ------------------------------------------------------------------ *
  *  Kernel state globals                                              *
  * ------------------------------------------------------------------ */
-#define MAX_PROCESSES 2
+#define MAX_PROCESSES 5
+#define MAX_CORES     2
 extern int              next_pid;
 extern int              current_processes;
 extern process_t        process_table[];
 extern atomic_flag      lock;
-extern process_t       *current_process_ptr;
+extern process_t       *current_process_ptrs[];
 extern pthread_mutex_t  process_lock;
 extern bool             is_kernel_initialized;
 
