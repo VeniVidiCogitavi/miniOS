@@ -34,6 +34,7 @@ typedef enum {
 typedef enum {
     PROC_READY,
     PROC_RUNNING,
+    PROC_WAIT_LOCK,
     PROC_DONE
 } proc_state_t;
 
@@ -82,7 +83,8 @@ void kprintf(const char *fmt, ...);
 extern int              next_pid;
 extern int              current_processes;
 extern process_t        process_table[];
-extern atomic_flag      lock;
+extern bool             lock;
+extern int              lock_owner_pid;
 extern process_t       *current_process_ptrs[];
 extern pthread_mutex_t  process_lock;
 extern bool             is_kernel_initialized;

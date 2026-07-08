@@ -45,7 +45,8 @@ static syscall_result_t handle_free    (uintptr_t ptr);
 int              next_pid = 1;
 int              current_processes = 0;
 process_t        process_table[MAX_PROCESSES];
-atomic_flag      lock = ATOMIC_FLAG_INIT;
+bool             lock = false;
+int              lock_owner_pid = -1;
 process_t       *current_process_ptrs[MAX_CORES] = {NULL};
 pthread_mutex_t  process_lock = PTHREAD_MUTEX_INITIALIZER;
 bool             is_kernel_initialized = false;
@@ -182,21 +183,73 @@ static syscall_result_t handle_lockinit(void)
     return MINIOS_OK;
 }
 
+
+/**
+ * Attempts to obtain the user-level lock. If the lock is already held, it will put the current process
+ * to sleep until the lock is available.
+ */
 static syscall_result_t handle_lock(void)
 {
     kprintf("[kernel] handle_lock\n");
-    while (atomic_flag_test_and_set(&lock)) {
-        ;
+
+    process_t *this_process_ptr = find_process_self();
+    pthread_mutex_lock(&process_lock);
+
+    while (lock) {
+        // The lock is already held, so we need to yield the CPU to another process.
+        // Theoretically, we will only come back when "lock" is cleared, and we will
+        // be the next process to acquire it. However, it's possible that another
+        // process could acquire the lock before we do, so we need to check again in the while loop.
+
+        swap_in_ready_process(find_core_for_process(this_process_ptr));
+        swap_process_out(this_process_ptr, PROC_WAIT_LOCK);
     }
+
+    lock = true;
+    lock_owner_pid = this_process_ptr->pid;
+
+    pthread_mutex_unlock(&process_lock);
+
     return MINIOS_OK;
 }
 
+
+/**
+ * Releases the user-level lock. If there are any processes waiting for the lock, it will wake one of them up.
+ */
 static syscall_result_t handle_unlock(void)
 {
     kprintf("[kernel] handle_unlock\n");
-    atomic_flag_clear(&lock);
+
+    pthread_mutex_lock(&process_lock);
+
+    // Let's check that we're the owner of the lock before we unlock it. This protects against
+    // various errors, including double-unlocking.
+    process_t *this_process_ptr = find_process_self();
+    if (lock && (lock_owner_pid == this_process_ptr->pid)) {
+        lock = false;
+        lock_owner_pid = -1;
+
+        // If there are any processes waiting for the lock, we need to wake one of them up.
+        process_t *waiting_process_ptr = find_process_by_state(PROC_WAIT_LOCK);
+        if (waiting_process_ptr) {
+            // First see if there's an idle core to run the waiting process on (which we may have just
+            // left when we went to sleep)
+            const int idle_core_id = find_idle_core();
+            if (idle_core_id >= 0) {
+                kprintf("[kernel] swapping in process %d after waiting for lock, on core %d\n", waiting_process_ptr->pid, idle_core_id);
+                swap_process_in(waiting_process_ptr, idle_core_id);
+            } else {
+                // No idle cores, so we just mark the process as ready and let it be swapped in later.
+                kprintf("[kernel] marking process %d READY after waiting for lock\n", waiting_process_ptr->pid);
+                waiting_process_ptr->state = PROC_READY;
+            }
+        }
+    }
+    pthread_mutex_unlock(&process_lock);
     return MINIOS_OK;
 }
+
 
 static syscall_result_t handle_yield(void)
 {
@@ -213,7 +266,7 @@ static syscall_result_t handle_yield(void)
             swap_process_in(this_process_ptr, idle_core_id);
         } else {
             kprintf("swapping new process out\n");
-            swap_process_out(this_process_ptr);
+            swap_process_out(this_process_ptr, PROC_READY);
         }
     } else {
         // This is one of the currently running process, so we need to check whether its timeslice has expired,
@@ -224,7 +277,7 @@ static syscall_result_t handle_yield(void)
             if (swapped_process_ptr) {
                 // If we swapped in another process, we need to swap this one out
                 kprintf("timeslice expired, swapped in process %d\n", swapped_process_ptr->pid);
-                swap_process_out(this_process_ptr);
+                swap_process_out(this_process_ptr, PROC_READY);
             } else {
                 // There were no ready processes, we just continue running this one for now
                 kprintf("timeslice expired, no ready process, continuing\n");
@@ -241,13 +294,21 @@ static syscall_result_t handle_yield(void)
 }
 
 
+/**
+ * Called by a process when it's done, to allow the kernel to clean up and schedule another process.
+ */
 static syscall_result_t handle_done(void)
 {
     kprintf("[kernel] handle_done\n");
-    // This is called by a process when it's done, to allow the kernel to clean up and schedule another process.
-    pthread_mutex_lock(&process_lock);
 
     process_t *this_process_ptr = find_process_self();
+
+    // This will release the user-level lock if it's held by this process.
+    handle_unlock();
+
+    // Make sure not to lock the mutex until after calling handle_unlock(), to avoid deadlock.
+    pthread_mutex_lock(&process_lock);
+
     this_process_ptr->pid = 0;
 
     const int core_id = find_core_for_process(this_process_ptr);
