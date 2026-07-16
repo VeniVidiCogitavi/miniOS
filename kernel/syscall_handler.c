@@ -237,12 +237,12 @@ static syscall_result_t handle_unlock(void)
             // left when we went to sleep)
             const int idle_core_id = find_idle_core();
             if (idle_core_id >= 0) {
-                kprintf("[kernel] swapping in process %d after waiting for lock, on core %d\n", waiting_process_ptr->pid, idle_core_id);
-                swap_process_in(waiting_process_ptr, idle_core_id);
+                kprintf("[kernel] swapping in process %d after waiting for lock, on idle core %d\n", waiting_process_ptr->pid, idle_core_id);
             } else {
-                // No idle cores, so we just mark the process as ready and let it be swapped in later.
-                kprintf("[kernel] marking process %d READY after waiting for lock\n", waiting_process_ptr->pid);
-                waiting_process_ptr->state = PROC_READY;
+                // No idle cores, so we swap the process in on the current core.
+                kprintf("[kernel] swapping in process %d after waiting for lock, on same lock\n", waiting_process_ptr->pid);
+                swap_process_in(waiting_process_ptr, find_core_for_process(this_process_ptr));
+                swap_process_out(this_process_ptr, PROC_READY);
             }
         }
     }
